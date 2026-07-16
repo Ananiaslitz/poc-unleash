@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unicred - POC Feature Flag 2.0</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <div class="header-logo">
+                <span class="logo-accent">UNICRED</span>
+                <span class="logo-sub">FEATURE FLAGS</span>
+            </div>
+            <div class="unleash-status" id="unleashStatus">
+                <span class="status-dot pulsing"></span>
+                Conectado ao Unleash Server
+            </div>
+        </header>
+
+        <main class="dashboard-grid">
+            <section class="left-panel">
+                <div class="card glass">
+                    <div class="card-header">
+                        <h2>1. Simulador de Contexto</h2>
+                        <p class="card-subtitle">Selecione um perfil para simular como as regras do Unleash avaliam o
+                            usuário no backend.</p>
+                    </div>
+                    <div class="user-profiles">
+                        <button class="profile-btn active" data-userid="guest">
+                            <div class="profile-icon">👤</div>
+                            <div class="profile-info">
+                                <span class="profile-name">Visitante Comum</span>
+                                <span class="profile-id">ID: guest</span>
+                            </div>
+                        </button>
+
+                        <button class="profile-btn" data-userid="vip1">
+                            <div class="profile-icon">💎</div>
+                            <div class="profile-info">
+                                <span class="profile-name">Cliente VIP Unicred</span>
+                                <span class="profile-id">ID: vip1</span>
+                            </div>
+                        </button>
+
+                        <button class="profile-btn" data-userid="admin">
+                            <div class="profile-icon">🛡️</div>
+                            <div class="profile-info">
+                                <span class="profile-name">Administrador</span>
+                                <span class="profile-id">ID: admin</span>
+                            </div>
+                        </button>
+                    </div>
+
+                    <div class="custom-user-input">
+                        <label for="customUserId">Testar ID Customizado:</label>
+                        <div class="input-group">
+                            <input type="text" id="customUserId" placeholder="Ex: joao.silva" />
+                            <button id="applyCustomUser">Aplicar</button>
+                        </div>
+                    </div>
+
+                    <div class="perf-metric-container"
+                        style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.05); font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
+                        <span>⚡ Latência de Avaliação no Backend:</span>
+                        <strong id="evalLatencyText" style="color: #2ebb7d; font-family: monospace;">0.000 ms</strong>
+                        <span style="font-size: 0.75rem; color: #a0a0a0;">(em memória local)</span>
+                    </div>
+                </div>
+
+                <div class="card glass">
+                    <div class="card-header">
+                        <h2>2. Painel de Controle de Flags</h2>
+                        <p class="card-subtitle">Altere o estado das Feature Flags diretamente no Unleash através da
+                            Admin API.</p>
+                    </div>
+
+                    <div class="flags-list" id="flagsList">
+                        <div class="loading-spinner">Carregando flags...</div>
+                    </div>
+
+                    <div class="unleash-link-wrapper">
+                        <a href="http://localhost:4242" target="_blank" class="btn btn-secondary">
+                            Abrir Painel Oficial do Unleash ↗
+                        </a>
+                        <span class="credentials-info">Login: admin / Senha: unleash4all</span>
+                    </div>
+
+                    <div class="memory-diagnostics-wrapper" style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.05); font-size: 0.8rem; color: var(--text-muted);">
+                        <div style="font-weight: 600; color: #fff; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                            <span>💾 Diagnóstico de Memória do SDK:</span>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px 15px; font-family: monospace;">
+                            <div>Flags em Cache: <span id="diagToggleCount" style="color: #fff; font-weight: 500;">-</span></div>
+                            <div>Tamanho Payload: <span id="diagPayloadSize" style="color: #fff; font-weight: 500;">-</span></div>
+                            <div>Uso no V8 Heap: <span id="diagHeapEstimate" style="color: #2ebb7d; font-weight: 600;">-</span></div>
+                            <div>Heap Total Node: <span id="diagNodeHeap" style="color: #fff; font-weight: 500;">-</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card glass">
+                    <div class="card-header">
+                        <h2>3. Validador de Rollout (A/B Test)</h2>
+                        <p class="card-subtitle">Simule múltiplos cooperados simultaneamente para validar
+                            matematicamente a proporção de 30% de rollout da flag <code>experiment_cashback</code>.</p>
+                    </div>
+
+                    <div class="simulator-controls">
+                        <button id="runRolloutSimBtn" class="btn btn-primary"
+                            style="background: var(--primary-color); border: none; color: #fff;">
+                            Simular 1.000 Cooperados
+                        </button>
+                    </div>
+
+                    <div id="simResults" class="sim-results hide"
+                        style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 15px;">
+                        <div class="perf-metric-container"
+                            style="font-size: 0.8rem; color: var(--text-muted); border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 5px;">
+                            <span>⚡ Tempo para 1.000 avaliações: <strong id="simLatencyText"
+                                    style="color: #2ebb7d; font-family: monospace;">0 ms</strong></span>
+                            <span>Média: <strong id="simAvgLatencyText"
+                                    style="color: #2ebb7d; font-family: monospace;">0</strong> µs/check</span>
+                        </div>
+                        <div class="sim-progress-wrapper" style="display: flex; flex-direction: column; gap: 6px;">
+                            <div class="progress-labels"
+                                style="display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 500;">
+                                <span style="color: var(--success-color);">Variante: <strong
+                                        id="variantPerc">0%</strong></span>
+                                <span style="color: var(--text-muted);">Controle: <strong
+                                        id="controlPerc">0%</strong></span>
+                            </div>
+                            <div class="progress-bar-container"
+                                style="height: 10px; background: rgba(255, 255, 255, 0.05); border-radius: 5px; overflow: hidden; display: flex;">
+                                <div id="variantProgressBar" class="progress-bar-fill variant"
+                                    style="width: 0%; background: var(--success-color); transition: width 0.8s ease;">
+                                </div>
+                                <div id="controlProgressBar" class="progress-bar-fill control"
+                                    style="width: 100%; background: rgba(255, 255, 255, 0.1); transition: width 0.8s ease;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="sim-stats-grid"
+                            style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; text-align: center;">
+                            <div class="sim-stat-box"
+                                style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.03); border-radius: 8px; padding: 10px 5px;">
+                                <span class="stat-label"
+                                    style="display: block; font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">Total</span>
+                                <strong id="simTotal" style="font-size: 1.1rem; color: #fff;">1000</strong>
+                            </div>
+                            <div class="sim-stat-box"
+                                style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.03); border-radius: 8px; padding: 10px 5px;">
+                                <span class="stat-label"
+                                    style="display: block; font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">Variante</span>
+                                <strong id="simEnabled"
+                                    style="font-size: 1.1rem; color: var(--success-color);">0</strong>
+                            </div>
+                            <div class="sim-stat-box"
+                                style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.03); border-radius: 8px; padding: 10px 5px;">
+                                <span class="stat-label"
+                                    style="display: block; font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">Controle</span>
+                                <strong id="simDisabled" style="font-size: 1.1rem; color: #fff;">0</strong>
+                            </div>
+                        </div>
+
+                        <div class="sample-lists"
+                            style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 12px;">
+                            <div class="sample-col">
+                                <h5
+                                    style="font-size: 0.75rem; color: var(--success-color); margin-bottom: 6px; font-weight: 600;">
+                                    IDs Contemplados</h5>
+                                <ul id="contemplatedList" class="sample-ul"
+                                    style="list-style: none; font-size: 0.75rem; color: var(--text-muted); font-family: monospace; display: flex; flex-direction: column; gap: 2px;">
+                                </ul>
+                            </div>
+                            <div class="sample-col">
+                                <h5
+                                    style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 6px; font-weight: 600;">
+                                    IDs Controle</h5>
+                                <ul id="controlList" class="sample-ul"
+                                    style="list-style: none; font-size: 0.75rem; color: var(--text-muted); font-family: monospace; display: flex; flex-direction: column; gap: 2px;">
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card glass" style="margin-top: 1.5rem;">
+                    <div class="card-header">
+                        <h2>4. Telemetria de Rede (Tempo Real)</h2>
+                        <p class="card-subtitle">Requisições de rede feitas ao Unleash Server desde a inicialização do microsserviço.</p>
+                    </div>
+                    <div class="telemetry-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 1rem;">
+                        <div class="telemetry-box" style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.15); border-radius: 8px; padding: 12px; text-align: center;">
+                            <span style="font-size: 0.7rem; color: #f87171; text-transform: uppercase; display: block; font-weight: 500; margin-bottom: 4px;">Sem SDK (HTTP p/ flag)</span>
+                            <strong id="telemWithoutSdk" style="font-size: 1.4rem; color: #ef4444; font-family: monospace;">0</strong>
+                            <span style="font-size: 0.65rem; color: var(--text-muted); display: block; margin-top: 2px;">Requisições de rede</span>
+                        </div>
+                        <div class="telemetry-box" style="background: rgba(46, 187, 125, 0.08); border: 1px solid rgba(46, 187, 125, 0.15); border-radius: 8px; padding: 12px; text-align: center;">
+                            <span style="font-size: 0.7rem; color: #34d399; text-transform: uppercase; display: block; font-weight: 500; margin-bottom: 4px;">Com SDK (In-Memory)</span>
+                            <strong id="telemWithSdk" style="font-size: 1.4rem; color: #2ebb7d; font-family: monospace;">0</strong>
+                            <span style="font-size: 0.65rem; color: var(--text-muted); display: block; margin-top: 2px;">Requisições de rede</span>
+                        </div>
+                    </div>
+                    <div class="telemetry-info" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.05); font-size: 0.8rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 4px;">
+                        <div>⚡ Requisições de rede poupadas: <strong id="telemSavedRequests" style="color: #2ebb7d;">0</strong></div>
+                        <div>⚡ Tempo de rede economizado: <strong id="telemSavedTime" style="color: #2ebb7d;">0s</strong> <span style="font-size: 0.75rem; color: var(--text-muted);">(estimando ~20ms de overhead por HTTP)</span></div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="right-panel">
+                <div class="card glass preview-card">
+                    <div class="preview-badge">Visualização do App</div>
+
+                    <div class="app-simulation">
+                        <div class="mobile-header">
+                            <div class="mobile-user-welcome">
+                                <span class="welcome-text">Olá, <strong id="currentSimulatedUser">Visitante
+                                        Comum</strong></span>
+                                <span class="welcome-badge" id="currentSimulatedBadge">Padrão</span>
+                            </div>
+                            <div class="mobile-balance">
+                                <span class="balance-label">Saldo Disponível</span>
+                                <span class="balance-value">R$ 12.450,00</span>
+                            </div>
+                        </div>
+
+                        <div class="app-content-section">
+                            <div class="section-title-wrapper">
+                                <h3>Área do Cooperado</h3>
+                            </div>
+
+                            <div id="newDashboardView" class="dashboard-theme-new hide">
+                                <div class="analytics-grid">
+                                    <div class="analytic-item glass-dark">
+                                        <span class="analytic-title">Patrimônio Líquido</span>
+                                        <span class="analytic-number">R$ 150.230,00</span>
+                                        <div class="sparkline-container">
+                                            <svg viewBox="0 0 100 30" class="sparkline">
+                                                <path d="M0,25 Q15,5 30,18 T60,5 T90,2 M100,2" fill="none"
+                                                    stroke="#2ebb7d" stroke-width="2"></path>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                    <div class="analytic-item glass-dark">
+                                        <span class="analytic-title">Rendimento Mensal</span>
+                                        <span class="analytic-number">+ 1,24%</span>
+                                        <span class="analytic-desc text-green">R$ 1.860,00 este mês</span>
+                                    </div>
+                                </div>
+                                <div class="recent-transactions glass-dark">
+                                    <h4>Investimentos Ativos</h4>
+                                    <div class="investment-row">
+                                        <span>Renda Fixa Unicred Pre</span>
+                                        <strong>R$ 80.000,00</strong>
+                                    </div>
+                                    <div class="investment-row">
+                                        <span>Unicred Liquidez Diária</span>
+                                        <strong>R$ 70.230,00</strong>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="oldDashboardView" class="dashboard-theme-old">
+                                <div class="classic-list">
+                                    <p class="classic-alert">Você está visualizando a <strong>Interface Antiga</strong>.
+                                        Ative a flag <code>enable_new_dashboard</code> para liberar o novo painel.</p>
+                                    <div class="classic-item">
+                                        <span>Extrato Simplificado</span>
+                                        <a href="#">Visualizar PDF</a>
+                                    </div>
+                                    <div class="classic-item">
+                                        <span>Transferências</span>
+                                        <a href="#">Ir para PIX</a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="app-content-section" style="padding-top: 0; padding-bottom: 0;">
+                                <div id="cashbackBannerView" class="cashback-banner hide">
+                                    <div class="cashback-card">
+                                        <span class="cashback-emoji">🎁</span>
+                                        <div class="cashback-details">
+                                            <div class="cashback-header-row">
+                                                <span class="cashback-badge">GRUPO DE TESTE (30%)</span>
+                                                <strong>Cashback Exclusivo de 1.5%</strong>
+                                            </div>
+                                            <p>Parabéns! Seu ID foi sorteado no teste A/B para ganhar cashback em todas
+                                                as compras no crédito.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="noCashbackBannerView" class="no-cashback-container">
+                                    <p class="no-cashback-text">Grupo de Controle (70%): Sem promoção de cashback ativa.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="app-content-section">
+                                <div id="vipOffersView" class="vip-offers-container hide">
+                                    <div class="vip-card">
+                                        <div class="vip-card-glow"></div>
+                                        <div class="vip-card-header">
+                                            <span class="vip-gold-badge">OFERTA VIP</span>
+                                            <h4>LCA Unicred Premium</h4>
+                                        </div>
+                                        <p>Condição exclusiva identificada para seu perfil de cooperado. Rentabilidade
+                                            diferenciada.</p>
+                                        <div class="vip-rates">
+                                            <div class="rate-box">
+                                                <span class="rate-label">Rentabilidade</span>
+                                                <span class="rate-value">110% do CDI</span>
+                                            </div>
+                                            <div class="rate-box">
+                                                <span class="rate-label">Mínimo</span>
+                                                <span class="rate-value">R$ 50.000</span>
+                                            </div>
+                                        </div>
+                                        <button class="btn btn-vip">Investir Agora</button>
+                                    </div>
+                                </div>
+
+                                <div id="noVipOffersView" class="no-vip-container">
+                                    <p class="no-vip-text">Sem ofertas especiais. Mude o perfil para **Cliente VIP** ou
+                                        **Administrador** para liberar ofertas exclusivas de investimento.</p>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>

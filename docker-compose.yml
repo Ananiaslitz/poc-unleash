@@ -1,0 +1,48 @@
+services:
+  web:
+    image: unleashorg/unleash-server:latest
+    ports:
+      - "4242:4242"
+    environment:
+      DATABASE_URL: "postgres://postgres:unleash@db/unleash?sslmode=disable"
+      DATABASE_SSL: "false"
+      INIT_CLIENT_API_TOKENS: "default:development.unleash-insecure-api-token"
+      INIT_FRONTEND_API_TOKENS: "default:development.unleash-insecure-frontend-api-token"
+      INIT_ADMIN_API_TOKENS: "*:*.unleash-insecure-admin-api-token"
+      UNLEASH_SECRET: "algum-segredo-super-seguro-aqui"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4242/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: "unleash"
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "unleash"
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  demo-app:
+    build:
+      context: ./demo-app
+    ports:
+      - "3000:3000"
+    environment:
+      UNLEASH_URL: "http://web:4242/api"
+      UNLEASH_CLIENT_TOKEN: "default:development.unleash-insecure-api-token"
+      UNLEASH_ADMIN_TOKEN: "*:*.unleash-insecure-admin-api-token"
+      PORT: 3000
+
+    depends_on:
+      web:
+        condition: service_healthy
