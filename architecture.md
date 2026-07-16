@@ -70,10 +70,6 @@ Após simular **3.000 avaliações de cooperados**, a POC registrou:
 * **Com SDK (In-Memory):** Apenas **74** chamadas de rede reais efetuadas (soma do bootstrap, polling periódico de background e cliques de administração).
 * **Economia real de rede:** **3.103 requisições** evitadas, o que poupou cerca de **62,06 segundos** de tempo de rede acumulado (estimando ~20ms de tempo de handshake/transmissão por chamada HTTP).
 
-Veja o screenshot capturado em tempo real durante a simulação:
-
-<img src="./images/network_telemetry_results.png" alt="Métricas de Telemetria de Rede da POC" width="100%" />
-
 ---
 
 ## 4. Prova Prática: Métricas da Minha POC
@@ -90,11 +86,6 @@ Executei testes e registrei os resultados reais de latência gerados pelo SDK do
   * Média de latência: **~10.88 µs (microssegundos)** por verificação de flag!
   * *Conclusão:* Se cada verificação fizesse uma requisição HTTP, rodar 1.000 requisições sequenciais levaria no mínimo **10 a 30 segundos**, enquanto o processamento local consumiu apenas **10 milissegundos**.
 
-### Visualização dos Resultados na Interface:
-Veja abaixo os resultados das métricas de performance capturadas diretamente da interface da POC após a simulação de 1.000 usuários:
-
-<img src="./images/simulation_results.png" alt="Resultados da Simulação de Latência" width="100%" />
-
 ---
 
 ## 5. Prova Prática: Consumo de Memória do SDK
@@ -108,10 +99,6 @@ O outro ponto de preocupação comum é o consumo de memória ao manter o cache 
 
 ### O que isso representa em produção?
 Mesmo se escalarmos o projeto para **1.000 feature flags ativas**, o payload serializado seria de apenas **~350 KB a 500 KB**. O consumo total em memória do SDK seria em torno de **1.5 MB a 2 MB**. Em containers de produção que costumam rodar com limites normais de 512 MB ou 1 GB de RAM, o impacto do cache local do Unleash é **completamente irrelevante**.
-
-Veja o diagnóstico renderizado em tempo real na interface da minha POC:
-
-<img src="./images/memory_diagnostics_widget.png" alt="Diagnóstico de Memória da POC" width="100%" />
 
 ---
 
